@@ -1,7 +1,7 @@
 module SpellChecker.AStarHelper where
 
 import SpellChecker.Types
-import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector as V
 --import Debug.Trace
 
 -- | Returns the final score of a current element
@@ -12,9 +12,7 @@ getFinalScore = snd . V.last . currentMatrix
 getHeuristicScore :: Current -> Threshold -> Int
 getHeuristicScore current threshold =
   let costs = getCurrentCosts current threshold
-      currentLength = length $ currentWord current
-      heuristic = max 0 $ length (hWord threshold) - currentLength
-      total = costs + 0 --(half heuristic)
+      total = costs + 0
   in
   total
   --trace (show costs ++ " " ++ show (half heuristic) ++ "  " ++ currentWord current ++ "  " ++ (show $ hWords threshold)) total
@@ -22,10 +20,16 @@ getHeuristicScore current threshold =
 -- | Returns the current costs
 getCurrentCosts :: Current -> Threshold -> Int
 getCurrentCosts current threshold =
-  let wlength = length $ currentWord current
-      l = V.length $ currentMatrix current
-      in
-  snd $ ( V.! (min wlength (l-1)))  $ currentMatrix current
+  let l = V.length $ currentMatrix current
+      currentLength = length $ currentWord current
+      wlength = length $ hWord threshold
+      costs = if currentLength < wlength then
+                snd $ ( V.! (min currentLength (l-1)))  $ currentMatrix current
+              else
+                snd $ V.last $ currentMatrix current
+  in
+   costs
+  
 
 -- | Wrapper for (/2) :: Int -> Int
 half :: Int -> Int

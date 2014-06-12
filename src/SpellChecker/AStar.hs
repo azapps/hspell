@@ -8,7 +8,7 @@ import Data.Foldable (foldr')
 import Data.List
 import Data.Ord
 import SpellChecker.AStarHelper
-import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector as V
 
 -- | Performs an A* search on the trie and returns the n best results
 aStar :: Int -- ^ How many results do you need? (n)
@@ -18,12 +18,12 @@ aStar :: Int -- ^ How many results do you need? (n)
 aStar suggestions trie w' =
   let
     w = ' ' : w'
-    defaultThreshold = 3 --ceiling $ (realToFrac (length w) :: Double)
-    threshold = Threshold [] suggestions  defaultThreshold w'
+    defaultThreshold = ceiling $ (realToFrac (length w) :: Double)
+    threshold = Threshold V.empty suggestions  defaultThreshold w'
     curr = Current "" (V.fromList $ zip w [0..]) ' ' trie
     queue = Q.fromList [(getHeuristicScore curr threshold,curr)]
   in
-   hWords $ fst $ step (threshold, queue)
+   V.toList $ hWords $ fst $ step (threshold, queue)
 
 -- | This is actual algorithm for the A*
 step :: (Threshold, Queue) -- ^ Takes a threshold and a queue
@@ -48,7 +48,7 @@ step (h,q) =
 hasFinalResult :: Threshold -> Bool
 hasFinalResult threshold =
   let w = hWords threshold in
-  length w > 0 && fst (head w) == hWord threshold
+  V.length w > 0 && fst (V.head w) == hWord threshold
 
 -- | Calculates a new threshold from the current element and the current threshold
 updateThreshold :: Current -> Threshold -> Threshold
@@ -58,7 +58,7 @@ updateThreshold current threshold =
     threshold
   else
     let currentScore = getFinalScore current in
-    if length (hWords threshold) < hMaxLength threshold then
+    if V.length (hWords threshold) < hMaxLength threshold then
       -- If hWords is not full
       if currentScore > hDefault threshold then
         -- and the current score is bigger as the default one we ignore it
@@ -68,20 +68,25 @@ updateThreshold current threshold =
         insertSorted current threshold
     else
       -- hWords is full
-      let maxElem = maximumBy (comparing snd) $ hWords threshold in
+      let maxElem = V.last $ hWords threshold in
       if  currentScore >= snd maxElem then
         -- if the current score is bigger we ignore it
         threshold
       else
         -- we delete the biggest element and insert our
-        insertSorted current $ threshold { hWords = delete maxElem $ hWords threshold}
+        insertSorted current $ threshold { hWords = V.init $ hWords threshold}
 
 -- | Insert the current element in the threshold
 insertSorted :: Current -> Threshold -> Threshold
 insertSorted current threshold =
   let e = (currentWord current, getFinalScore current) in
-  threshold { hWords = insertBy (comparing snd) e $ hWords threshold}
+  addToThreshold e threshold
 
+
+addToThreshold :: (Word,Int) -> Threshold -> Threshold
+addToThreshold e threshold =
+  threshold { hWords = V.fromList $ insertBy (comparing snd) e $ V.toList $ hWords threshold}
+  
 -- | The expansion function for the A*
 expand :: Threshold -> Current -> [(Current,Int)]
 expand threshold current =
@@ -113,9 +118,9 @@ calcCurrent current (c,trie)= let
 matchThreshold :: Threshold -> Current -> Bool
 matchThreshold threshold current =
   let currentScore = getHeuristicScore current threshold in
-  if length (hWords threshold) < hMaxLength threshold then
+  if (V.length (hWords threshold)) < hMaxLength threshold then
     currentScore < hDefault threshold
   else
-    let maxElem = maximumBy (comparing snd) $ hWords threshold in
+    let maxElem = V.last $ hWords threshold in
     currentScore < snd maxElem
     

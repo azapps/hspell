@@ -15,9 +15,9 @@ data Token = Token {
 
 -- | Silent spell checker: Takes always the first option
 checkSilent :: String -> Trie Char -> String
-checkSilent str trie = do
+checkSilent str trie =
   let tokens = splitString str
-      newTokens = map (correctTokenSilent trie) tokens
+      newTokens = map (correctTokenSilent trie) tokens in
   joinTokens newTokens
 
 -- | Takes the first option for one token

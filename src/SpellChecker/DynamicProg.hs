@@ -1,7 +1,7 @@
 module SpellChecker.DynamicProg (calcWeights) where
 
 import SpellChecker.Types
-import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector as V
 import Data.Monoid
 
 {-import Data.Foldable (foldl')
