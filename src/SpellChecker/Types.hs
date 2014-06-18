@@ -3,8 +3,19 @@ import SpellChecker.Trie
 import qualified Data.PQueue.Prio.Min as Q
 import Data.Vector (Vector)
 
--- | One column of the Weight matrix
-type WeightMatrix = Vector (Char,Int)
+data Penalties = Penalties {
+  penaltyInsertion :: Char -> Char -> Int
+  , penaltyDeletion :: Char -> Char -> Int
+  , penaltySubstitution :: Char -> Char -> Int
+  , penaltyReversal :: Char -> Char -> Int
+  }
+
+type WMColumn = Vector (Char,Int)
+
+-- | The last two columns of the Weight matrix
+type WeightMatrix = (Maybe WMColumn,WMColumn)
+
+
 
 -- | Wrapper for a word – I want to generalize the datatypes later
 type Word = String
@@ -16,7 +27,6 @@ data Threshold = Threshold {
   , hDefault :: Int -- ^ The default threshold which is used when `hWords` is shorter then `hMaxLength`
   , hWord :: Word
   }
-
 
 -- | The alias for the queue used for saving the next possible nodes
 type Queue = Q.MinPQueue Int Current

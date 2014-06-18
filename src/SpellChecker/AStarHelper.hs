@@ -6,7 +6,7 @@ import qualified Data.Vector as V
 
 -- | Returns the final score of a current element
 getFinalScore :: Current -> Int
-getFinalScore = snd . V.last . currentMatrix
+getFinalScore = snd . V.last . snd . currentMatrix
 
 -- | get the score (old costs + heuristic)
 getHeuristicScore :: Current -> Threshold -> Int
@@ -20,13 +20,13 @@ getHeuristicScore current threshold =
 -- | Returns the current costs
 getCurrentCosts :: Current -> Threshold -> Int
 getCurrentCosts current threshold =
-  let l = V.length $ currentMatrix current
+  let l = V.length $ snd $ currentMatrix current
       currentLength = length $ currentWord current
       wlength = length $ hWord threshold
       costs = if currentLength < wlength then
-                snd $ ( V.! (min currentLength (l-1)))  $ currentMatrix current
+                snd $ ( V.! (min currentLength (l-1)))  $ snd $ currentMatrix current
               else
-                snd $ V.last $ currentMatrix current
+                snd $ V.last $ snd $ currentMatrix current
   in
    costs
   

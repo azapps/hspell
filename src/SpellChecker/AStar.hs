@@ -10,35 +10,38 @@ import Data.Ord
 import SpellChecker.AStarHelper
 import qualified Data.Vector as V
 
+
+
 -- | Performs an A* search on the trie and returns the n best results
 aStar :: Int -- ^ How many results do you need? (n)
+         -> Penalties
          -> Trie Char -- ^ The Trie with all possible words
          -> Word -- ^ The word you are searching for
          -> [(Word,Int)] -- ^ List of n best words with theire weights
-aStar suggestions trie w' =
+aStar suggestions penalties trie w' =
   let
     w = ' ' : w'
     defaultThreshold = ceiling $ (realToFrac (length w) :: Double)
     threshold = Threshold V.empty suggestions  defaultThreshold w'
-    curr = Current "" (V.fromList $ zip w [0..]) ' ' trie
+    curr = Current "" (Nothing, V.fromList $ zip w [0..]) ' ' trie
     queue = Q.fromList [(getHeuristicScore curr threshold,curr)]
   in
-   V.toList $ hWords $ fst $ step (threshold, queue)
+   V.toList $ hWords $ fst $ step penalties (threshold, queue)
 
 -- | This is actual algorithm for the A*
-step :: (Threshold, Queue) -- ^ Takes a threshold and a queue
+step :: Penalties -> (Threshold, Queue) -- ^ Takes a threshold and a queue
         -> (Threshold, Queue) -- ^ returns a new threshold and new queue
-step (h,q) =
+step penalties (h,q) =
   case Q.getMin q of
     Nothing -> (h,q)
     Just (_, current) ->
-      let expandedQueue = expand h current
+      let expandedQueue = expand penalties h current
           newQueue :: Queue
           newQueue = foldr' (uncurry $ flip Q.insert) (Q.deleteMin q) expandedQueue
           newThreshold = updateThreshold current h
       in
        if matchThreshold h current && not (hasFinalResult h) then
-         step (newThreshold, newQueue)
+         step penalties (newThreshold, newQueue)
        else
          (h,q)
 
@@ -88,11 +91,11 @@ addToThreshold e threshold =
   threshold { hWords = V.fromList $ insertBy (comparing snd) e $ V.toList $ hWords threshold}
   
 -- | The expansion function for the A*
-expand :: Threshold -> Current -> [(Current,Int)]
-expand threshold current =
+expand :: Penalties -> Threshold -> Current -> [(Current,Int)]
+expand penalties threshold current =
   let subt = getChildrens $ currentTrie current
       elems :: [(Char,Trie Char)]
-      elems = filter (matchThreshold threshold . calcCurrent current) subt in
+      elems = filter (matchThreshold threshold . calcCurrent penalties current) subt in
   toCurrentList elems
   where
     toCurrentList :: [(Char,Trie Char)] -> [(Current,Int)]
@@ -100,27 +103,34 @@ expand threshold current =
     toCurrentList (x:xs) =
       let
         newScore = getHeuristicScore curr threshold
-        curr = calcCurrent current x
+        curr = calcCurrent penalties current x
       in
       (curr,newScore) : toCurrentList xs
 
 -- | Calculate a new current element from an old one and the SubTrie of that
-calcCurrent :: Current -- ^ Current element
+calcCurrent :: Penalties -- ^ Penalties
+               -> Current -- ^ Current element
                -> (Char,Trie Char) -- ^ One element of the return of getChildrens
                -> Current -- ^ New current element
-calcCurrent current (c,trie)= let 
+calcCurrent penalties current (c,trie)= let 
   newWord = currentWord current ++ [c]
-  newWM = calcWeights c (currentMatrix current)
+  newWM = calcWeights penalties (lastChar current) c (currentMatrix current)
   in
    Current newWord newWM c trie
 
 -- | Checks if the weight of the current is smaller than the treshold
 matchThreshold :: Threshold -> Current -> Bool
 matchThreshold threshold current =
-  let currentScore = getHeuristicScore current threshold in
+  let currentScore = getHeuristicScore current threshold
+      matchMaxDiff = currentScore  < 4
+      maxElem = V.last $ hWords threshold
+      matchHeuristic = currentScore < snd maxElem
+  in
   if (V.length (hWords threshold)) < hMaxLength threshold then
     currentScore < hDefault threshold
   else
-    let maxElem = V.last $ hWords threshold in
-    currentScore < snd maxElem
+    matchMaxDiff && matchHeuristic
+
+lastChar :: Current -> Char
+lastChar Current { currentWord = w } = last w
     
