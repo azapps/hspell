@@ -10,8 +10,6 @@ import Data.Ord
 import SpellChecker.AStarHelper
 import qualified Data.Vector as V
 
-
-
 -- | Performs an A* search on the trie and returns the n best results
 aStar :: Int -- ^ How many results do you need? (n)
          -> Penalties
@@ -85,7 +83,7 @@ insertSorted current threshold =
   let e = (currentWord current, getFinalScore current) in
   addToThreshold e threshold
 
-
+-- | Add a word to the threshold
 addToThreshold :: (Word,Int) -> Threshold -> Threshold
 addToThreshold e threshold =
   threshold { hWords = V.fromList $ insertBy (comparing snd) e $ V.toList $ hWords threshold}
@@ -131,6 +129,7 @@ matchThreshold threshold current =
   else
     matchMaxDiff && matchHeuristic
 
+-- | Returns the last character of the current word. Space if its empty because it must not occur in a word
 lastChar :: Current -> Char
-lastChar Current { currentWord = w } = last w
+lastChar Current { currentWord = w } = last $ ' ' : w
     

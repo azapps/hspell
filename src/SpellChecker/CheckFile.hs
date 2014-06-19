@@ -12,7 +12,7 @@ defaultPenalties = Penalties {
   penaltyInsertion = \_ _ -> 1
   , penaltyDeletion = \_ _ -> 1
   , penaltySubstitution = \x y -> if x == y then 0 else 1
-  , penaltyReversal = \_ _ -> 1
+  , penaltyReversal = \_ _ -> 0 
   }
                    
 -- | Represents a part of text
@@ -28,6 +28,9 @@ checkSilent str trie =
       newTokens = map (correctTokenSilent trie) tokens in
   joinTokens newTokens
 
+checkSilentIO :: String -> Trie Char -> IO String
+checkSilentIO str trie = return $ checkSilent str trie
+
 -- | Takes the first option for one token
 correctTokenSilent :: Trie Char -> Token -> Token
 correctTokenSilent _ t@(Token "" _) = t
@@ -40,12 +43,12 @@ correctTokenSilent trie token =
   else token { tWord = first }
 
 -- | Checks a text interactively
-checkString :: String -> Trie Char -> IO (Maybe String)
+checkString :: String -> Trie Char -> IO String
 checkString str trie = do
   let tokens = splitString str
   newTokens <- mapM (correctToken trie) tokens
   let newText = joinTokens newTokens
-  return $ Just newText
+  return newText
 
 -- | Handles the correction of a token
 correctToken :: Trie Char -> Token -> IO Token
