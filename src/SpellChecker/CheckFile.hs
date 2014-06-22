@@ -1,6 +1,6 @@
 module SpellChecker.CheckFile where
 
-import SpellChecker.Trie
+import Data.Trie
 import SpellChecker.Types
 import SpellChecker.AStar
 import Data.Char

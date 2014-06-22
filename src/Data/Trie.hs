@@ -1,4 +1,4 @@
-module SpellChecker.Trie where
+module Data.Trie where
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Foldable (foldr')

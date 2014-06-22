@@ -1,7 +1,7 @@
 {-#LANGUAGE TupleSections #-}
 module Main where
 
-import SpellChecker.Trie
+import Data.Trie as Trie
 import SpellChecker.Types
 import Options.Applicative
 import           Data.Monoid
@@ -17,7 +17,7 @@ data SpellCheckerConfig = SpellCheckerConfig {
 -- | Creates a Trie with empty Weight matrices from a List of Words
 createTrie :: [Word] -- ^ List of Words
               -> Trie Char -- ^ Trie
-createTrie = addWords SpellChecker.Trie.empty
+createTrie = addWords Trie.empty
 
 -- | Executes the checking
 runChecker :: SpellCheckerConfig -> IO ()

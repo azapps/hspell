@@ -2,13 +2,12 @@ module SpellChecker.AStar where
 
 import SpellChecker.Types
 import qualified Data.PQueue.Prio.Min as Q
-import SpellChecker.Trie
+import Data.Trie
 import SpellChecker.DynamicProg
 import Data.Foldable (foldr')
-import Data.List
-import Data.Ord
 import SpellChecker.AStarHelper
 import qualified Data.Vector as V
+import qualified Data.BTree as BT
 
 -- | Performs an A* search on the trie and returns the n best results
 aStar :: Int -- ^ How many results do you need? (n)
@@ -20,11 +19,12 @@ aStar suggestions penalties trie w' =
   let
     w = ' ' : w'
     defaultThreshold = ceiling $ (realToFrac (length w) :: Double)
-    threshold = Threshold V.empty suggestions  defaultThreshold w'
+    threshold = Threshold BT.empty suggestions  defaultThreshold w'
     curr = Current "" (Nothing, V.fromList $ zip w [0..]) ' ' trie
     queue = Q.fromList [(getHeuristicScore curr threshold,curr)]
+    toTuple (SuggWord i sw) = (sw,i)
   in
-   V.toList $ hWords $ fst $ step penalties (threshold, queue)
+   map toTuple $ BT.toList $ hWords $ fst $ step penalties (threshold, queue)
 
 -- | This is actual algorithm for the A*
 step :: Penalties -> (Threshold, Queue) -- ^ Takes a threshold and a queue
@@ -49,7 +49,7 @@ step penalties (h,q) =
 hasFinalResult :: Threshold -> Bool
 hasFinalResult threshold =
   let w = hWords threshold in
-  V.length w > 0 && fst (V.head w) == hWord threshold
+  not (BT.null w) && suggWord (BT.head w) == hWord threshold
 
 -- | Calculates a new threshold from the current element and the current threshold
 updateThreshold :: Current -> Threshold -> Threshold
@@ -59,7 +59,7 @@ updateThreshold current threshold =
     threshold
   else
     let currentScore = getFinalScore current in
-    if V.length (hWords threshold) < hMaxLength threshold then
+    if BT.size (hWords threshold) < hMaxLength threshold then
       -- If hWords is not full
       if currentScore > hDefault threshold then
         -- and the current score is bigger as the default one we ignore it
@@ -69,25 +69,20 @@ updateThreshold current threshold =
         insertSorted current threshold
     else
       -- hWords is full
-      let maxElem = V.last $ hWords threshold in
-      if  currentScore >= snd maxElem then
+      let maxElem = BT.last $ hWords threshold in
+      if  currentScore >= suggInt maxElem then
         -- if the current score is bigger we ignore it
         threshold
       else
         -- we delete the biggest element and insert our
-        insertSorted current $ threshold { hWords = V.init $ hWords threshold}
+        insertSorted current $ threshold { hWords = BT.init $ hWords threshold}
 
 -- | Insert the current element in the threshold
 insertSorted :: Current -> Threshold -> Threshold
 insertSorted current threshold =
-  let e = (currentWord current, getFinalScore current) in
-  addToThreshold e threshold
+  let e = SuggWord (getFinalScore current) (currentWord current) in
+  threshold { hWords = BT.insert e $ hWords threshold}
 
--- | Add a word to the threshold
-addToThreshold :: (Word,Int) -> Threshold -> Threshold
-addToThreshold e threshold =
-  threshold { hWords = V.fromList $ insertBy (comparing snd) e $ V.toList $ hWords threshold}
-  
 -- | The expansion function for the A*
 expand :: Penalties -> Threshold -> Current -> [(Current,Int)]
 expand penalties threshold current =
@@ -121,10 +116,10 @@ matchThreshold :: Threshold -> Current -> Bool
 matchThreshold threshold current =
   let currentScore = getHeuristicScore current threshold
       matchMaxDiff = currentScore  < 4
-      maxElem = V.last $ hWords threshold
-      matchHeuristic = currentScore < snd maxElem
+      maxElem = BT.last $ hWords threshold
+      matchHeuristic = currentScore < suggInt maxElem
   in
-  if (V.length (hWords threshold)) < hMaxLength threshold then
+  if (BT.size (hWords threshold)) < hMaxLength threshold then
     currentScore < hDefault threshold
   else
     matchMaxDiff && matchHeuristic

@@ -1,7 +1,8 @@
 module SpellChecker.Types where
-import SpellChecker.Trie
+import Data.Trie
 import qualified Data.PQueue.Prio.Min as Q
 import Data.Vector (Vector)
+import Data.BTree
 
 data Penalties = Penalties {
   penaltyInsertion :: Char -> Char -> Int
@@ -20,9 +21,13 @@ type WeightMatrix = (Maybe WMColumn,WMColumn)
 -- | Wrapper for a word – I want to generalize the datatypes later
 type Word = String
 
+-- | ADT for saving suggested words in the Tree
+data SuggWord = SuggWord {suggInt :: Int, suggWord :: Word}
+                deriving (Eq, Ord)
+
 -- | Saves the current threshold
 data Threshold = Threshold {
-  hWords :: Vector (Word,Int) -- ^ The best `hMaxLength` words 
+  hWords :: Tree SuggWord -- ^ The best `hMaxLength` words 
   , hMaxLength :: Int -- ^ The max length of `hWords`
   , hDefault :: Int -- ^ The default threshold which is used when `hWords` is shorter then `hMaxLength`
   , hWord :: Word
