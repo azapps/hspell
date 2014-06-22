@@ -3,3 +3,7 @@ dist
 *~
 \#*
 .#*
+*.cabal-sandbox
+cabal.sandbox.config
+*.txt
+*.hi

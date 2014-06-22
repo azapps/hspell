@@ -12,7 +12,7 @@ import qualified Data.Vector as V
 
 -- | Performs an A* search on the trie and returns the n best results
 aStar :: Int -- ^ How many results do you need? (n)
-         -> Penalties
+         -> Penalties -- ^ Penalties for insertion, deletion …
          -> Trie Char -- ^ The Trie with all possible words
          -> Word -- ^ The word you are searching for
          -> [(Word,Int)] -- ^ List of n best words with theire weights
