@@ -1,7 +1,14 @@
-hspell
+[hspell](https://github.com/azapps/hspell)
 ======
 
 An experimental spell checker written in Haskell
+
+# Usage
+```sh
+$ cabal sandbox init
+$ cabal install
+$ spellchecker # Usage: spellchecker (-d|--dictFile DICTFILE) (-i|--file FILE) (-o|--out OUT) [-q|--quiet] [-s|--suggestions NUMBER]
+```
 
 
 # License

@@ -5,7 +5,6 @@ import SpellChecker.Types
 import SpellChecker.AStar
 import Data.Char
 import Text.Read
-import Control.Applicative
 
 defaultPenalties :: Penalties
 defaultPenalties = Penalties {
@@ -36,31 +35,31 @@ correctTokenSilent :: Trie Char -> Token -> Token
 correctTokenSilent _ t@(Token "" _) = t
 correctTokenSilent trie token =
   let word = tWord token
-      results = aStar 10 defaultPenalties trie word
+      results = aStar 1 defaultPenalties trie word
       first = if length results == 0 then word else fst $ head results in
   if first == word then
     token
   else token { tWord = first }
 
 -- | Checks a text interactively
-checkString :: String -> Trie Char -> IO String
-checkString str trie = do
+checkString :: Int -> String -> Trie Char -> IO String
+checkString numSugg str trie = do
   let tokens = splitString str
-  newTokens <- mapM (correctToken trie) tokens
+  newTokens <- mapM (correctToken numSugg trie) tokens
   let newText = joinTokens newTokens
   return newText
 
 -- | Handles the correction of a token
-correctToken :: Trie Char -> Token -> IO Token
-correctToken _ t@(Token "" _) = return t
-correctToken trie token = do
+correctToken :: Int -> Trie Char -> Token -> IO Token
+correctToken _ _ t@(Token "" _) = return t
+correctToken numSugg trie token = do
   let word = tWord token
-      results = aStar 10 defaultPenalties trie word
+      results = aStar numSugg defaultPenalties trie word
       first = fst $ head results
   if first == word then
     return token
   else do
-    putStrLn $ word ++ " is misspelled. Suggestions:"
+    putStrLn $ word ++ " is misspelled.  \n  Type enter (Take the current word) \n  A number (take the Suggestion)\n  Another word"
     selectWord token results
 
 -- | Asks the user for the best correction
@@ -68,12 +67,16 @@ selectWord :: Token -> [(Word, Int)] -> IO Token
 selectWord token results = do
   let options = zip ([0..] :: [Int]) results
   mapM_ printOption options
-  res <- (readMaybe <$> getLine) :: IO (Maybe Int)
-  case res of
-    Nothing -> tryAgain
-    Just i -> case lookup i options of
-      Nothing -> tryAgain
-      Just w -> return $ token {tWord = fst w}
+  l <- getLine
+  case l of
+    "" -> return token
+    _ -> do
+      let resInt = (readMaybe l) :: Maybe Int
+      case resInt of
+        Nothing -> return $ token {tWord = l}
+        Just i -> case lookup i options of
+          Nothing -> tryAgain
+          Just w -> return $ token {tWord = fst w}
   where
     printOption (i,(w,weight)) = putStrLn $ (show i) ++ ") " ++ w ++ " weight: (" ++ show weight ++ ")"
     tryAgain = do

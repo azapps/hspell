@@ -12,6 +12,7 @@ data SpellCheckerConfig = SpellCheckerConfig {
   , cfgCheckPath :: FilePath
   , cfgOutPath :: FilePath
   , cfgQuiet :: Bool
+  , cfgNumSuggestions :: Int
     }
 
 -- | Creates a Trie with empty Weight matrices from a List of Words
@@ -21,11 +22,11 @@ createTrie = addWords Trie.empty
 
 -- | Executes the checking
 runChecker :: SpellCheckerConfig -> IO ()
-runChecker (SpellCheckerConfig dictPath fPath oFile quiet) = do
+runChecker (SpellCheckerConfig dictPath fPath oFile quiet numSugg) = do
   dict <- readFile dictPath
   file <- readFile fPath
   let
-    checkF = if quiet then checkSilentIO else checkString
+    checkF = if quiet then checkSilentIO else checkString numSugg
     trie = createTrie $ concat $ map words $ lines dict
   corrected <- checkF file trie
   writeFile oFile corrected
@@ -57,4 +58,9 @@ main = execParser opts >>= runChecker
                   ( short 'q'
                     <> long "quiet"
                     <> help "Take the best match for every Word" )
+                  <*> option (short 's'
+                    <> long "suggestions"
+                    <> metavar "NUMBER"
+                    <> help "Show n suggestions"
+                    <> value 10)
 
