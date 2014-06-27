@@ -20,14 +20,17 @@ createTrie :: [Word] -- ^ List of Words
               -> Trie Char -- ^ Trie
 createTrie = addWords Trie.empty
 
+-- | Reads a dictionary from a file and creates a trie
+trieFromFile :: FilePath -> IO (Trie Char)
+trieFromFile f = createTrie <$> (concat . map words . lines) <$> readFile f
+
 -- | Executes the checking
 runChecker :: SpellCheckerConfig -> IO ()
 runChecker (SpellCheckerConfig dictPath fPath oFile quiet numSugg) = do
-  dict <- readFile dictPath
+  trie <- trieFromFile dictPath
   file <- readFile fPath
   let
     checkF = if quiet then checkSilentIO else checkString numSugg
-    trie = createTrie $ concat $ map words $ lines dict
   corrected <- checkF file trie
   writeFile oFile corrected
 

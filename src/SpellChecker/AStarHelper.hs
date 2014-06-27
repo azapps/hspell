@@ -2,11 +2,11 @@ module SpellChecker.AStarHelper where
 
 import SpellChecker.Types
 import qualified Data.Vector as V
---import Debug.Trace
+import Data.Ord
 
 -- | Returns the final score of a current element
 getFinalScore :: Current -> Int
-getFinalScore = snd . V.last . snd . currentMatrix
+getFinalScore = snd3 . V.last . snd . currentMatrix
 
 -- | get the score (old costs + heuristic)
 getHeuristicScore :: Current -> Threshold -> Int
@@ -17,18 +17,17 @@ getHeuristicScore current threshold =
   total
   --trace (show costs ++ " " ++ show (half heuristic) ++ "  " ++ currentWord current ++ "  " ++ (show $ hWords threshold)) total
 
+-- | snd function for triple
+snd3 :: (a,b,c) -> b
+snd3 (_,a,_) = a
+
 -- | Returns the current costs
+-- | This is the minimum of the current Weightmatrix
 getCurrentCosts :: Current -> Threshold -> Int
-getCurrentCosts current threshold =
-  let l = V.length $ snd $ currentMatrix current
-      currentLength = length $ currentWord current
-      wlength = length $ hWord threshold
-      costs = if currentLength < wlength then
-                snd $ ( V.! (min currentLength (l-1)))  $ snd $ currentMatrix current
-              else
-                snd $ V.last $ snd $ currentMatrix current
+getCurrentCosts current _ =
+  let currentMat = snd $ currentMatrix current
   in
-   costs
+   snd3 $ V.minimumBy (comparing snd3) currentMat
   
 
 -- | Wrapper for (/2) :: Int -> Int

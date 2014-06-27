@@ -6,13 +6,16 @@ import SpellChecker.AStar
 import Data.Char
 import Text.Read
 
+-- | The default penalties
 defaultPenalties :: Penalties
-defaultPenalties = Penalties {
-  penaltyInsertion = \_ _ -> 1
-  , penaltyDeletion = \_ _ -> 1
-  , penaltySubstitution = \x y -> if x == y then 0 else 1
-  , penaltyReversal = \_ _ -> 0 
-  }
+defaultPenalties (Subst x y)
+  | x==y = 0
+  | otherwise = 1
+defaultPenalties (Ins _) = 1
+defaultPenalties (Del _) = 1
+defaultPenalties (Rev _ _ (Rev _ _ _)) = 1000
+defaultPenalties (Rev _ _ _) = 1
+defaultPenalties No = 0
                    
 -- | Represents a part of text
 data Token = Token {

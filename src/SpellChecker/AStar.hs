@@ -20,7 +20,7 @@ aStar suggestions penalties trie w' =
     w = ' ' : w'
     defaultThreshold = ceiling $ (realToFrac (length w) :: Double)
     threshold = Threshold BT.empty suggestions  defaultThreshold w'
-    curr = Current "" (Nothing, V.fromList $ zip w [0..]) ' ' trie
+    curr = Current "" (Nothing, V.fromList $ zip3 w [0..] (repeat No)) ' ' trie
     queue = Q.fromList [(getHeuristicScore curr threshold,curr)]
     toTuple (SuggWord i sw) = (sw,i)
   in
@@ -115,14 +115,13 @@ calcCurrent penalties current (c,trie)= let
 matchThreshold :: Threshold -> Current -> Bool
 matchThreshold threshold current =
   let currentScore = getHeuristicScore current threshold
-      matchMaxDiff = currentScore  < 4
       maxElem = BT.last $ hWords threshold
       matchHeuristic = currentScore < suggInt maxElem
   in
   if (BT.size (hWords threshold)) < hMaxLength threshold then
     currentScore < hDefault threshold
   else
-    matchMaxDiff && matchHeuristic
+    matchHeuristic
 
 -- | Returns the last character of the current word. Space if its empty because it must not occur in a word
 lastChar :: Current -> Char

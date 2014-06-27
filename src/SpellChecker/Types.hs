@@ -4,14 +4,15 @@ import qualified Data.PQueue.Prio.Min as Q
 import Data.Vector (Vector)
 import Data.BTree
 
-data Penalties = Penalties {
-  penaltyInsertion :: Char -> Char -> Int
-  , penaltyDeletion :: Char -> Char -> Int
-  , penaltySubstitution :: Char -> Char -> Int
-  , penaltyReversal :: Char -> Char -> Int
-  }
+data Op = Subst Char Char | Del Char | Ins Char | Rev Char Char Op | No
+        deriving (Eq, Show)
 
-type WMColumn = Vector (Char,Int)
+type Penalties = Op -> Int
+
+getPenalty :: Int -> Penalties -> Op -> (Int,Op)
+getPenalty i p op = (i + p op, op)
+
+type WMColumn = Vector (Char,Int,Op)
 
 -- | The last two columns of the Weight matrix
 type WeightMatrix = (Maybe WMColumn,WMColumn)
